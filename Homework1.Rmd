@@ -1,0 +1,95 @@
+---
+title: "Homework1"
+author: "Shenglin Liu"
+date: "2/26/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Part a
+```{r ml}
+library(tidyverse)
+library(ModelMetrics)
+# load data
+test = read_csv("./data/solubility_test.csv")
+train = read_csv("./data/solubility_train.csv")
+# fit a linear model using least squares
+fit_ml = lm(Solubility ~ .-Solubility, data = train)
+# summary(fit_ml)
+# calculate the mse using the test data
+pred_ml  = predict(fit_ml, test)
+mse_ml = mse(test$Solubility, pred_ml)
+mse_ml
+```
+
+# Part b
+```{r ridge}
+library(ISLR)
+library(glmnet)
+library(caret)
+# fit the ridge regression (alpha = 0) with a sequence of lambdas
+x.train = as.matrix(subset(train, select = -Solubility))
+y.train = train$Solubility
+# cross-validation
+set.seed(1)
+cv.ridge = cv.glmnet(x.train, y.train, type.measure = "mse", alpha = 0, lambda = 10^seq(10, -3, length = 100))
+plot(cv.ridge)
+# best lambda
+best.ridge = cv.ridge$lambda.min
+best.ridge
+# test error
+x.test = as.matrix(subset(test, select = -Solubility))
+pred_ridge = predict(cv.ridge, s = best.ridge, newx = x.test)
+mse_ridge = mse(test$Solubility, pred_ridge)
+mse_ridge
+```
+
+# Part c
+```{r lasso}
+# cross-validation
+set.seed(2)
+cv.lasso  = cv.glmnet(x.train, y.train, alpha = 1, lambda = 10^seq(10, -3, length = 100))
+plot(cv.lasso)
+# best lambda
+best.lasso = cv.lasso$lambda.min
+best.lasso
+# test error
+pred_lasso = predict(cv.lasso, s = best.lasso, newx = x.test)
+mse_lasso = mse(test$Solubility, pred_lasso)
+mse_lasso
+# coefficients of the final model
+predict(cv.lasso, s = "lambda.min", type = "coefficients")
+```
+
+# Part d
+```{r pc}
+library(pls)
+set.seed(3)
+# fit PCR model using the function pcr()
+fit.pcr = pcr(Solubility ~ .-Solubility, data = train, scale = TRUE, validation = "CV")
+# summary(fit.pcr)
+validationplot(fit.pcr, val.type = "MSEP", legendpos = "topright")
+cv.mse  = RMSEP(fit.pcr)
+ncomp.cv = which.min(cv.mse$val[1,,])-1
+ncomp.cv
+pred_pc = predict(fit.pcr, newdata = test, ncomp = ncomp.cv)
+# test error
+mse_pc = mse(test$Solubility, pred_pc)
+mse_pc
+```
+
+# Part e
+For ridge regression, the optimal lambda chosen is `r best.ridge`. For lasso, the optimal lambda chosen is `r best.lasso`. For principal component regression, the value of M chosen is `r ncomp.cv`.
+After using the test data to calculate the mean square error for the four models (linear = `r mse_ml`, ridge = `r mse_ridge`, lasso = `r mse_lasso`, principal component = `r mse_pc`), lasso has the smallest test error. 
+
+# Part f
+
+I will choose lasso model for predicting solubility. First of all, lasso yields the smallest mse on the test dataset. Moreover, the lasso performs variable selection and yields sparse models. In this case, the summary of coefficients for the final lasso model show that some of them shrink to zero. Therefore, the lasso model also has higher interpretability.
+
+
+
+
+
