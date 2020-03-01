@@ -19,6 +19,10 @@ train = read_csv("./data/solubility_train.csv")
 # fit a linear model using least squares
 fit_ml = lm(Solubility ~ .-Solubility, data = train)
 # summary(fit_ml)
+# mse for training data
+pred_ml_train = predict(fit_ml, train)
+mse_ml_train = mse(train$Solubility, pred_ml_train)
+mse_ml_train
 # calculate the mse using the test data
 pred_ml  = predict(fit_ml, test)
 mse_ml = mse(test$Solubility, pred_ml)
@@ -40,6 +44,10 @@ plot(cv.ridge)
 # best lambda
 best.ridge = cv.ridge$lambda.min
 best.ridge
+# mse for training data
+pred_ridge_train = predict(cv.ridge, s = best.ridge, newx = x.train)
+mse_ridge_train = mse(train$Solubility, pred_ridge_train)
+mse_ridge_train
 # test error
 x.test = as.matrix(subset(test, select = -Solubility))
 pred_ridge = predict(cv.ridge, s = best.ridge, newx = x.test)
@@ -50,33 +58,41 @@ mse_ridge
 # Part c
 ```{r lasso}
 # cross-validation
-set.seed(2)
+set.seed(1)
 cv.lasso  = cv.glmnet(x.train, y.train, alpha = 1, lambda = 10^seq(10, -3, length = 100))
 plot(cv.lasso)
 # best lambda
 best.lasso = cv.lasso$lambda.min
 best.lasso
+# mse for training data
+pred_lasso_train = predict(cv.lasso, s = best.lasso, newx = x.train)
+mse_lasso_train = mse(train$Solubility, pred_lasso_train)
+mse_lasso_train
 # test error
 pred_lasso = predict(cv.lasso, s = best.lasso, newx = x.test)
 mse_lasso = mse(test$Solubility, pred_lasso)
 mse_lasso
 # coefficients of the final model
-predict(cv.lasso, s = "lambda.min", type = "coefficients")
+# predict(cv.lasso, s = "lambda.min", type = "coefficients")
 ```
 
 # Part d
 ```{r pc}
 library(pls)
-set.seed(3)
 # fit PCR model using the function pcr()
+set.seed(1)
 fit.pcr = pcr(Solubility ~ .-Solubility, data = train, scale = TRUE, validation = "CV")
 # summary(fit.pcr)
 validationplot(fit.pcr, val.type = "MSEP", legendpos = "topright")
 cv.mse  = RMSEP(fit.pcr)
 ncomp.cv = which.min(cv.mse$val[1,,])-1
 ncomp.cv
-pred_pc = predict(fit.pcr, newdata = test, ncomp = ncomp.cv)
+# mse for training data
+pred_pc_train = predict(fit.pcr, newdata = train, ncomp = ncomp.cv)
+mse_pc_train = mse(train$Solubility, pred_pc_train)
+mse_pc_train
 # test error
+pred_pc = predict(fit.pcr, newdata = test, ncomp = ncomp.cv)
 mse_pc = mse(test$Solubility, pred_pc)
 mse_pc
 ```
@@ -87,7 +103,7 @@ After using the test data to calculate the mean square error for the four models
 
 # Part f
 
-I will choose lasso model for predicting solubility. First of all, lasso yields the smallest mse on the test dataset. Moreover, the lasso performs variable selection and yields sparse models. In this case, the summary of coefficients for the final lasso model show that some of them shrink to zero. Therefore, the lasso model also has higher interpretability.
+I will choose the linear regression model for predicting solubility. First of all, it yields the smallest mse on the training dataset (linear = `r mse_ml_train`, ridge = `r mse_ridge_train`, lasso = `r mse_lasso_train`, principal component = `r mse_pc_train`). Moreover, the linear regression model also has higher interpretability.
 
 
 
