@@ -1,6 +1,6 @@
 ---
 title: "Homework1"
-author: "Shenglin Liu"
+author: "Shenglin Liu sl4659"
 date: "2/26/2020"
 output: github_document
 ---

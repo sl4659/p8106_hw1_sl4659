@@ -1,6 +1,6 @@
 Homework1
 ================
-Shenglin Liu
+Shenglin Liu sl4659
 2/26/2020
 
 # Part a
